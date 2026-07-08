@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 
-from app.schemas import RankingItem
+from app.rankings.schemas import RankingItem
 
 
 def parse_price(value: str | None) -> int | None:
