@@ -1,8 +1,9 @@
 from urllib.parse import urlencode
 
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 
 MUSINSA_RANKING_URL = "https://www.musinsa.com/main/sneaker/ranking"
+
 
 def build_ranking_url(
     gender: str,
@@ -21,7 +22,8 @@ def build_ranking_url(
 
     return f"{MUSINSA_RANKING_URL}?{urlencode(query_params)}"
 
-def fetch_ranking_html(
+
+async def fetch_ranking_html(
     gender: str = "A",
     age_band: str = "AGE_BAND_ALL",
     include_soldout: bool = True,
@@ -32,14 +34,14 @@ def fetch_ranking_html(
         include_soldout=include_soldout,
     )
 
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page()
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch(headless=True)
+        page = await browser.new_page()
 
-        page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-        page.wait_for_timeout(3_000)
-        html = page.content()
+        await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+        await page.wait_for_timeout(3_000)
+        html = await page.content()
 
-        browser.close()
+        await browser.close()
 
     return html

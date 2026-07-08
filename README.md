@@ -34,6 +34,16 @@
 - [x] Step 10. 로컬 실행 및 API 테스트
 - [x] Step 11. README 실행 방법 정리
 
+## Feedback Checklist
+
+- [x] 폴더 구조 개선
+- [x] 파일 단독 실행용 `__name__` 블록 제거
+- [ ] 비동기 적용
+- [ ] 테스트 코드 작성
+- [ ] 예외 처리 구조 개선
+- [ ] 엔드포인트 및 함수 네이밍 컨벤션 정리
+- [ ] Documentation 정리
+
 ## Project Structure
 
 ```text

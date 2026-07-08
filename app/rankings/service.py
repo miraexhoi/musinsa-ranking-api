@@ -1,16 +1,16 @@
-from playwright.sync_api import Error as PlaywrightError
+from playwright.async_api import Error as PlaywrightError
 
 from app.rankings.crawler import fetch_ranking_html
 from app.rankings.parser import parse_ranking_items
 from app.rankings.schemas import RankingResponse
 
 
-def get_ranking_response(
+async def get_ranking_response(
     gender: str,
     age_band: str,
     include_soldout: bool,
 ) -> RankingResponse:
-    html = fetch_ranking_html(
+    html = await fetch_ranking_html(
         gender=gender,
         age_band=age_band,
         include_soldout=include_soldout,
