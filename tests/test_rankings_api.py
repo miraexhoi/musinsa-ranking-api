@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, patch
 
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -55,3 +56,33 @@ def test_get_rankings_returns_ranking_response():
         age_band="AGE_BAND_ALL",
         include_soldout=True,
     )
+
+
+def test_get_rankings_returns_error_response_when_fetch_fails():
+    with patch(
+        "app.rankings.router.get_ranking_response",
+        new=AsyncMock(
+            side_effect=HTTPException(
+                status_code=502,
+                detail="Failed to fetch Musinsa ranking page",
+            )
+        ),
+    ):
+        response = client.get("/rankings")
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "status": "error",
+        "message": "Failed to fetch Musinsa ranking page",
+    }
+
+
+def test_get_rankings_returns_fail_response_when_query_param_is_invalid():
+    response = client.get(
+        "/rankings",
+        params={"include_soldout": "not-a-bool"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["status"] == "fail"
+    assert "detail" in response.json()["data"]
