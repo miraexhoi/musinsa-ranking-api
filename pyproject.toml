@@ -10,3 +10,8 @@ dependencies = [
     "playwright>=1.61.0",
     "uvicorn>=0.50.2",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
