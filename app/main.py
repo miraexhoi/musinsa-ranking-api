@@ -8,12 +8,12 @@ register_exception_handlers(app)
 
 
 @app.get("/")
-def read_root() -> dict[str, str]:
+def get_root() -> dict[str, str]:
     return {"message": "Musinsa Ranking API"}
 
 
 @app.get("/health")
-def read_health() -> dict[str, str]:
+def get_health() -> dict[str, str]:
     return {"status": "ok"}
 
 

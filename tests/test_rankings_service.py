@@ -3,11 +3,11 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.rankings.schemas import RankingItem
-from app.rankings.service import get_ranking_response
+from app.rankings.service import get_rankings_response
 
 
 @pytest.mark.anyio
-async def test_get_ranking_response_returns_parsed_items():
+async def test_get_rankings_response_returns_parsed_items():
     items = [
         RankingItem(
             rank=1,
@@ -27,7 +27,7 @@ async def test_get_ranking_response_returns_parsed_items():
         ),
         patch("app.rankings.service.parse_ranking_items", return_value=items),
     ):
-        response = await get_ranking_response(
+        response = await get_rankings_response(
             gender="A",
             age_band="AGE_BAND_ALL",
             include_soldout=True,
@@ -41,7 +41,7 @@ async def test_get_ranking_response_returns_parsed_items():
 
 
 @pytest.mark.anyio
-async def test_get_ranking_response_excludes_soldout_items():
+async def test_get_rankings_response_excludes_soldout_items():
     items = [
         RankingItem(
             rank=1,
@@ -64,7 +64,7 @@ async def test_get_ranking_response_excludes_soldout_items():
         ),
         patch("app.rankings.service.parse_ranking_items", return_value=items),
     ):
-        response = await get_ranking_response(
+        response = await get_rankings_response(
             gender="A",
             age_band="AGE_BAND_ALL",
             include_soldout=False,

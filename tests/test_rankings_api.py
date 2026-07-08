@@ -9,14 +9,14 @@ from app.rankings.schemas import RankingItem, RankingResponse
 client = TestClient(app)
 
 
-def test_read_health_returns_ok():
+def test_get_health_returns_ok():
     response = client.get("/health")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
-def test_get_rankings_returns_ranking_response():
+def test_list_rankings_returns_ranking_response():
     ranking_response = RankingResponse(
         gender="A",
         age_band="AGE_BAND_ALL",
@@ -36,9 +36,9 @@ def test_get_rankings_returns_ranking_response():
     )
 
     with patch(
-        "app.rankings.router.get_ranking_response",
+        "app.rankings.router.get_rankings_response",
         new=AsyncMock(return_value=ranking_response),
-    ) as mocked_get_ranking_response:
+    ) as mocked_get_rankings_response:
         response = client.get(
             "/rankings",
             params={
@@ -51,16 +51,16 @@ def test_get_rankings_returns_ranking_response():
     assert response.status_code == 200
     assert response.json()["count"] == 1
     assert response.json()["items"][0]["name"] == "테스트 상품"
-    mocked_get_ranking_response.assert_awaited_once_with(
+    mocked_get_rankings_response.assert_awaited_once_with(
         gender="A",
         age_band="AGE_BAND_ALL",
         include_soldout=True,
     )
 
 
-def test_get_rankings_returns_error_response_when_fetch_fails():
+def test_list_rankings_returns_error_response_when_fetch_fails():
     with patch(
-        "app.rankings.router.get_ranking_response",
+        "app.rankings.router.get_rankings_response",
         new=AsyncMock(
             side_effect=HTTPException(
                 status_code=502,
@@ -77,7 +77,7 @@ def test_get_rankings_returns_error_response_when_fetch_fails():
     }
 
 
-def test_get_rankings_returns_fail_response_when_query_param_is_invalid():
+def test_list_rankings_returns_fail_response_when_query_param_is_invalid():
     response = client.get(
         "/rankings",
         params={"include_soldout": "not-a-bool"},

@@ -5,7 +5,7 @@ from app.rankings.parser import parse_ranking_items
 from app.rankings.schemas import RankingResponse
 
 
-async def get_ranking_response(
+async def get_rankings_response(
     gender: str,
     age_band: str,
     include_soldout: bool,
@@ -29,4 +29,4 @@ async def get_ranking_response(
     )
 
 
-__all__ = ["PlaywrightError", "get_ranking_response"]
+__all__ = ["PlaywrightError", "get_rankings_response"]
