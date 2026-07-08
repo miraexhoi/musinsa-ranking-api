@@ -1,6 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from playwright.sync_api import Error as PlaywrightError
 
-from app.schemas import RankingItem, RankingResponse
+from app.crawler import fetch_ranking_html
+from app.parser import parse_ranking_items
+from app.schemas import RankingResponse
 
 app = FastAPI(title="Musinsa Ranking API")
 
@@ -20,17 +23,22 @@ def read_rankings(
     age_band: str = "AGE_BAND_ALL",
     include_soldout: bool = True,
 ) -> RankingResponse:
-    items = [
-        RankingItem(
-            rank=1,
-            brand="Sample Brand",
-            name="Sample Sneaker",
-            price=129000,
-            product_url="https://www.musinsa.com/sample-product",
-            image_url=None,
-            is_soldout=False,
+    try:
+        html = fetch_ranking_html(
+            gender=gender,
+            age_band=age_band,
+            include_soldout=include_soldout,
         )
-    ]
+    except PlaywrightError as error:
+        raise HTTPException(
+            status_code=502,
+            detail="Failed to fetch Musinsa ranking page",
+        ) from error
+
+    items = parse_ranking_items(html)
+
+    if not include_soldout:
+        items = [item for item in items if not item.is_soldout]
 
     return RankingResponse(
         gender=gender,
