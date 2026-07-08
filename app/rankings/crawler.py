@@ -10,6 +10,7 @@ def build_ranking_url(
     age_band: str,
     include_soldout: bool = True,
 ) -> str:
+    """요청 조건을 무신사 랭킹 페이지 URL 쿼리로 변환한다."""
     query_params = {
         "gf": gender,
         "storeCode": "sneaker",
@@ -28,6 +29,7 @@ async def fetch_ranking_html(
     age_band: str = "AGE_BAND_ALL",
     include_soldout: bool = True,
 ) -> str:
+    """Playwright로 무신사 랭킹 페이지에 접근해 HTML을 가져온다."""
     url = build_ranking_url(
         gender=gender,
         age_band=age_band,

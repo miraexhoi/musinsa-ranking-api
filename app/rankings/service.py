@@ -10,6 +10,7 @@ async def get_rankings_response(
     age_band: str,
     include_soldout: bool,
 ) -> RankingResponse:
+    """랭킹 HTML 수집, 파싱, 품절 필터링 후 API 응답을 만든다."""
     html = await fetch_ranking_html(
         gender=gender,
         age_band=age_band,

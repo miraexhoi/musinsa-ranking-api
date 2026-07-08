@@ -4,6 +4,7 @@ from app.rankings.schemas import RankingItem
 
 
 def parse_price(value: str | None) -> int | None:
+    """HTML 속성의 가격 문자열을 정수로 변환한다."""
     if value is None:
         return None
 
@@ -14,6 +15,7 @@ def parse_price(value: str | None) -> int | None:
 
 
 def parse_rank(value: str | None, fallback_rank: int) -> int:
+    """HTML 속성의 랭킹 문자열을 정수로 변환한다."""
     if value is None:
         return fallback_rank
 
@@ -24,11 +26,13 @@ def parse_rank(value: str | None, fallback_rank: int) -> int:
 
 
 def parse_is_soldout(card) -> bool:
+    """상품 카드 텍스트에서 품절 여부를 판단한다."""
     text = card.get_text(" ", strip=True)
     return "품절" in text or "SOLD OUT" in text.upper()
 
 
 def parse_ranking_items(html: str) -> list[RankingItem]:
+    """무신사 랭킹 HTML에서 상품 랭킹 목록을 추출한다."""
     soup = BeautifulSoup(html, "html.parser")
 
     cards = soup.find_all(
