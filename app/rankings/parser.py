@@ -93,15 +93,3 @@ def parse_ranking_items(html: str) -> list[RankingItem]:
         )
 
     return items
-
-
-if __name__ == "__main__":
-    with open("ranking.html", "r", encoding="utf-8") as file:
-        html = file.read()
-
-    items = parse_ranking_items(html)
-
-    print("item count:", len(items))
-
-    for item in items[:20]:
-        print(item.model_dump())

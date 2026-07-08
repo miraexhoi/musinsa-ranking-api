@@ -43,12 +43,3 @@ def fetch_ranking_html(
         browser.close()
 
     return html
-
-if __name__ == "__main__":
-    html = fetch_ranking_html()
-
-    with open("ranking.html", "w", encoding="utf-8") as file:
-        file.write(html)
-
-    print("Saved ranking.html")
-    print(f"HTML length: {len(html)}")
