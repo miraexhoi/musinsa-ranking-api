@@ -23,6 +23,11 @@ def parse_rank(value: str | None, fallback_rank: int) -> int:
         return fallback_rank
 
 
+def parse_is_soldout(card) -> bool:
+    text = card.get_text(" ", strip=True)
+    return "품절" in text or "SOLD OUT" in text.upper()
+
+
 def parse_ranking_items(html: str) -> list[RankingItem]:
     soup = BeautifulSoup(html, "html.parser")
 
@@ -83,7 +88,7 @@ def parse_ranking_items(html: str) -> list[RankingItem]:
                 price=price,
                 product_url=product_url,
                 image_url=image_url,
-                is_soldout=False,
+                is_soldout=parse_is_soldout(card),
             )
         )
 

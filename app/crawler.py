@@ -4,7 +4,11 @@ from playwright.sync_api import sync_playwright
 
 MUSINSA_RANKING_URL = "https://www.musinsa.com/main/sneaker/ranking"
 
-def build_ranking_url(gender: str, age_band:str) -> str:
+def build_ranking_url(
+    gender: str,
+    age_band: str,
+    include_soldout: bool = True,
+) -> str:
     query_params = {
         "gf": gender,
         "storeCode": "sneaker",
@@ -12,15 +16,24 @@ def build_ranking_url(gender: str, age_band:str) -> str:
         "contentsId": "",
         "categoryCode": "103000",
         "ageBand": age_band,
+        "soldOut": str(include_soldout).lower(),
     }
 
     return f"{MUSINSA_RANKING_URL}?{urlencode(query_params)}"
 
-def fetch_ranking_html(gender: str = "A", age_band: str = "AGE_BAND_ALL") -> str:
-    url = build_ranking_url(gender=gender, age_band=age_band)
+def fetch_ranking_html(
+    gender: str = "A",
+    age_band: str = "AGE_BAND_ALL",
+    include_soldout: bool = True,
+) -> str:
+    url = build_ranking_url(
+        gender=gender,
+        age_band=age_band,
+        include_soldout=include_soldout,
+    )
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=False)
+        browser = playwright.chromium.launch(headless=True)
         page = browser.new_page()
 
         page.goto(url, wait_until="domcontentloaded", timeout=30_000)
