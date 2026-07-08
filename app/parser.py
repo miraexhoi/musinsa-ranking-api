@@ -1,11 +1,13 @@
 from bs4 import BeautifulSoup
 
+from app.schemas import RankingItem
 
-def parse_ranking_items(html: str) -> list[dict[str, int | str]]:
+
+def parse_ranking_items(html: str) -> list[RankingItem]:
     soup = BeautifulSoup(html, "html.parser")
     links = soup.find_all("a")
 
-    items = []
+    items: list[RankingItem] = []
     seen_product_urls = set()
 
     for link in links:
@@ -27,11 +29,11 @@ def parse_ranking_items(html: str) -> list[dict[str, int | str]]:
         seen_product_urls.add(href)
 
         items.append(
-            {
-                "rank": len(items) + 1,
-                "name": name,
-                "product_url": href,
-            }
+            RankingItem(
+                rank=len(items) + 1,
+                name=name,
+                product_url=href,
+            )
         )
 
     return items
@@ -46,4 +48,4 @@ if __name__ == "__main__":
     print("item count:", len(items))
 
     for item in items[:20]:
-        print(item)
+        print(item.model_dump())
