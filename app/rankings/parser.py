@@ -1,5 +1,7 @@
+from fastapi import status
 from bs4 import BeautifulSoup
 
+from app.rankings.errors import RANKING_PARSE_ERROR_MESSAGE, RankingParseError
 from app.rankings.schemas import RankingItem
 
 
@@ -10,8 +12,13 @@ def parse_price(value: str | None) -> int | None:
 
     try:
         return int(value)
-    except ValueError:
-        return None
+    except ValueError as error:
+        raise RankingParseError(
+            code="RANKING_PRICE_PARSE_FAILED",
+            message=RANKING_PARSE_ERROR_MESSAGE,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            debug_detail=f"data-price value is not numeric: value={value}",
+        ) from error
 
 
 def parse_rank(value: str | None, fallback_rank: int) -> int:
@@ -31,6 +38,61 @@ def parse_is_soldout(card) -> bool:
     return "품절" in text or "SOLD OUT" in text.upper()
 
 
+def parse_ranking_item(card, fallback_rank: int) -> RankingItem:
+    """상품 카드 하나에서 랭킹 상품 정보를 추출한다."""
+    item_id = card.get("data-item-id")
+
+    if not item_id:
+        raise RankingParseError(
+            code="RANKING_ITEM_ID_NOT_FOUND",
+            message=RANKING_PARSE_ERROR_MESSAGE,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            debug_detail=f"data-item-id attribute is missing: rank={fallback_rank}",
+        )
+
+    product_url = f"https://www.musinsa.com/products/{item_id}"
+    product_links = card.find_all("a", href=product_url)
+
+    if card.name == "a" and card.get("href") == product_url:
+        product_links.append(card)
+
+    name = ""
+
+    for product_link in product_links:
+        text = product_link.get_text(" ", strip=True)
+
+        if text:
+            name = text
+            break
+
+    if not name:
+        raise RankingParseError(
+            code="RANKING_ITEM_NAME_NOT_FOUND",
+            message=RANKING_PARSE_ERROR_MESSAGE,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            debug_detail=(
+                "Product name link text is missing: "
+                f"rank={fallback_rank}, product_url={product_url}"
+            ),
+        )
+
+    brand_link = card.find("a", href=lambda href: href and "/brand/" in href)
+    brand = brand_link.get_text(" ", strip=True) if brand_link else None
+
+    image = card.find("img")
+    image_url = image.get("src") if image else None
+
+    return RankingItem(
+        rank=parse_rank(card.get("data-item-list-index"), fallback_rank),
+        brand=brand,
+        name=name,
+        price=parse_price(card.get("data-price")),
+        product_url=product_url,
+        image_url=image_url,
+        is_soldout=parse_is_soldout(card),
+    )
+
+
 def parse_ranking_items(html: str) -> list[RankingItem]:
     """무신사 랭킹 HTML에서 상품 랭킹 목록을 추출한다."""
     soup = BeautifulSoup(html, "html.parser")
@@ -43,57 +105,48 @@ def parse_ranking_items(html: str) -> list[RankingItem]:
         }
     )
 
+    if not cards:
+        raise RankingParseError(
+            code="RANKING_CARD_NOT_FOUND",
+            message=RANKING_PARSE_ERROR_MESSAGE,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            debug_detail=(
+                "No product cards found by attributes: "
+                "data-item-id, data-price, data-item-list-index"
+            ),
+        )
+
     items: list[RankingItem] = []
     seen_product_urls = set()
 
     for card in cards:
-        item_id = card.get("data-item-id")
-        price = parse_price(card.get("data-price"))
-        rank = parse_rank(card.get("data-item-list-index"), len(items) + 1)
+        try:
+            item = parse_ranking_item(card, fallback_rank=len(items) + 1)
+        except RankingParseError:
+            raise
+        except Exception as error:
+            raise RankingParseError(
+                code="RANKING_CARD_PARSE_FAILED",
+                message=RANKING_PARSE_ERROR_MESSAGE,
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                debug_detail=(
+                    "Unexpected error while parsing product card: "
+                    f"rank={len(items) + 1}, error={error}"
+                ),
+            ) from error
 
-        if not item_id:
+        if item.product_url in seen_product_urls:
             continue
 
-        product_url = f"https://www.musinsa.com/products/{item_id}"
+        seen_product_urls.add(item.product_url)
+        items.append(item)
 
-        if product_url in seen_product_urls:
-            continue
-
-        product_links = card.find_all("a", href=product_url)
-
-        if card.name == "a" and card.get("href") == product_url:
-            product_links.append(card)
-
-        name = ""
-
-        for product_link in product_links:
-            text = product_link.get_text(" ", strip=True)
-
-            if text:
-                name = text
-                break
-
-        if not name:
-            continue
-
-        brand_link = card.find("a", href=lambda href: href and "/brand/" in href)
-        brand = brand_link.get_text(" ", strip=True) if brand_link else None
-
-        image = card.find("img")
-        image_url = image.get("src") if image else None
-
-        seen_product_urls.add(product_url)
-
-        items.append(
-            RankingItem(
-                rank=rank,
-                brand=brand,
-                name=name,
-                price=price,
-                product_url=product_url,
-                image_url=image_url,
-                is_soldout=parse_is_soldout(card),
-            )
+    if not items:
+        raise RankingParseError(
+            code="RANKING_ITEM_NOT_FOUND",
+            message=RANKING_PARSE_ERROR_MESSAGE,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            debug_detail="Product cards were found, but no ranking items were parsed.",
         )
 
     return items

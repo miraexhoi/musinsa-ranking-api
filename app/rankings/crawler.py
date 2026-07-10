@@ -1,6 +1,10 @@
 from urllib.parse import urlencode
 
+from fastapi import status
+from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import async_playwright
+
+from app.rankings.errors import RANKING_FETCH_ERROR_MESSAGE, RankingFetchError
 
 MUSINSA_RANKING_URL = "https://www.musinsa.com/main/sneaker/ranking"
 
@@ -36,14 +40,24 @@ async def fetch_ranking_html(
         include_soldout=include_soldout,
     )
 
-    async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch(headless=True)
-        page = await browser.new_page()
+    try:
+        async with async_playwright() as playwright:
+            browser = await playwright.chromium.launch(headless=True)
 
-        await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-        await page.wait_for_timeout(3_000)
-        html = await page.content()
+            try:
+                page = await browser.new_page()
 
-        await browser.close()
+                await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+                await page.wait_for_timeout(3_000)
+                html = await page.content()
+            finally:
+                await browser.close()
+    except PlaywrightError as error:
+        raise RankingFetchError(
+            code="RANKING_PAGE_FETCH_FAILED",
+            message=RANKING_FETCH_ERROR_MESSAGE,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            debug_detail=f"Playwright failed while loading url={url}: {error}",
+        ) from error
 
     return html

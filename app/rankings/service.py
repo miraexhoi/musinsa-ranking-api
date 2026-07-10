@@ -1,5 +1,3 @@
-from playwright.async_api import Error as PlaywrightError
-
 from app.rankings.crawler import fetch_ranking_html
 from app.rankings.parser import parse_ranking_items
 from app.rankings.schemas import RankingResponse
@@ -30,4 +28,4 @@ async def get_rankings_response(
     )
 
 
-__all__ = ["PlaywrightError", "get_rankings_response"]
+__all__ = ["get_rankings_response"]

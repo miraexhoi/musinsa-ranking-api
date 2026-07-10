@@ -1,3 +1,6 @@
+import pytest
+
+from app.rankings.errors import RankingParseError
 from app.rankings.parser import parse_ranking_items
 
 
@@ -55,3 +58,32 @@ def test_parse_ranking_items_marks_soldout_item():
 
     assert len(items) == 1
     assert items[0].is_soldout is True
+
+
+def test_parse_ranking_items_raises_error_when_cards_are_missing():
+    html = "<html><body><p>상품 카드 없음</p></body></html>"
+
+    with pytest.raises(RankingParseError) as exc_info:
+        parse_ranking_items(html)
+
+    assert exc_info.value.code == "RANKING_CARD_NOT_FOUND"
+
+
+def test_parse_ranking_items_raises_error_when_name_is_missing():
+    html = """
+    <div
+        data-item-id="123"
+        data-price="10000"
+        data-item-list-index="1"
+    >
+        <a href="https://www.musinsa.com/products/123"></a>
+    </div>
+    """
+
+    with pytest.raises(RankingParseError) as exc_info:
+        parse_ranking_items(html)
+
+    assert exc_info.value.code == "RANKING_ITEM_NAME_NOT_FOUND"
+    assert "product_url=https://www.musinsa.com/products/123" in (
+        exc_info.value.debug_detail
+    )
